@@ -16,7 +16,9 @@ Initialized empty Git repository in /Users/michael/learngit/.git/
 
 ###### 将文件添加到仓库
 
-​	**git add readme.txt** 
+​	`git add readme.txt` 
+
+​	`git add .`   //一次性提交所有改动
 
 ###### 将文件提交到仓库
 
@@ -348,4 +350,399 @@ $ git clone git@github.com:ssaishandsome/learngit.git
                     │
                     │
                   HEAD
+```
+
+
+
+不过，从现在开始，对工作区的修改和提交就是针对`dev`分支了，比如新提交一次后，`dev`指针往前移动一步，而`master`指针不变：
+
+```ascii
+                 master
+                    │
+                    │
+                    ▼
+┌───┐    ┌───┐    ┌───┐    ┌───┐
+│   │───▶│   │───▶│   │───▶│   │
+└───┘    └───┘    └───┘    └───┘
+                             ▲
+                             │
+                             │
+                            dev
+                             ▲
+                             │
+                             │
+                           HEAD
+```
+
+假如我们在`dev`上的工作完成了，就可以把`dev`合并到`master`上。Git怎么合并呢？最简单的方法，就是直接把`master`指向`dev`的当前提交，就完成了合并：
+
+```ascii
+                           HEAD
+                             │
+                             │
+                             ▼
+                          master
+                             │
+                             │
+                             ▼
+┌───┐    ┌───┐    ┌───┐    ┌───┐
+│   │───▶│   │───▶│   │───▶│   │
+└───┘    └───┘    └───┘    └───┘
+                             ▲
+                             │
+                             │
+                            dev
+```
+
+所以Git合并分支也很快！就改改指针，工作区内容也不变！
+
+合并完分支后，甚至可以删除`dev`分支。删除`dev`分支就是把`dev`指针给删掉，删掉后，我们就剩下了一条`master`分支：
+
+```ascii
+                           HEAD
+                             │
+                             │
+                             ▼
+                          master
+                             │
+                             │
+                             ▼
+┌───┐    ┌───┐    ┌───┐    ┌───┐
+│   │───▶│   │───▶│   │───▶│   │
+└───┘    └───┘    └───┘    └───┘
+```
+
+
+
+首先，我们创建`dev`分支，然后切换到`dev`分支：
+
+```
+$ git checkout -b dev
+Switched to a new branch 'dev'
+```
+
+`git checkout`命令加上`-b`参数表示创建并切换，相当于以下两条命令：
+
+```
+$ git branch dev
+$ git checkout dev
+Switched to branch 'dev'
+```
+
+然后，用`git branch`命令查看当前分支：
+
+```
+$ git branch
+* dev
+  master
+```
+
+ 修改 `dev`分支的工作后，我们就可以切换回`master`分支：
+
+```
+$ git checkout master
+Switched to branch 'master'
+```
+
+我们把`dev`分支的工作成果合并到`master`分支上：
+
+```
+$ git merge dev
+Updating d46f35e..b17d20e
+Fast-forward  //快进模式合并
+ readme.txt | 1 +
+ 1 file changed, 1 insertion(+)
+```
+
+合并完成后，就可以放心地删除`dev`分支了：
+
+```
+$ git branch -d dev
+Deleted branch dev (was b17d20e).
+如果要丢弃一个没有被合并过的分支，可以通过git branch -D <name>强行删除。
+```
+
+
+
+当然为了防止与上述撤销操作 `git checkout --<file>` 弄混，新版Git提供了新的 `git switch` 切换分支
+
+创建并切换到新的`dev`分支，可以使用：
+
+```
+$ git switch -c dev
+```
+
+直接切换到已有的`master`分支，可以使用：
+
+```
+$ git switch master
+```
+
+
+
+###### 合并冲突
+
+​	如果你创建了一个分支，修改并提交；然后在主分支中也进行修改并提交，那么分支线如下图：
+
+```ascii
+                            HEAD
+                              │
+                              │
+                              ▼
+                           master
+                              │
+                              │
+                              ▼
+                            ┌───┐
+                         ┌─▶│   │
+┌───┐    ┌───┐    ┌───┐  │  └───┘
+│   │───▶│   │───▶│   │──┤
+└───┘    └───┘    └───┘  │  ┌───┐
+                         └─▶│   │
+                            └───┘
+                              ▲
+                              │
+                              │
+                          feature1
+```
+
+此时合并就会发生冲突
+
+```
+$ git merge feature1
+Auto-merging readme.txt
+CONFLICT (content): Merge conflict in readme.txt
+Automatic merge failed; fix conflicts and then commit the result.
+```
+
+
+
+我们可以直接查看readme.txt的内容：
+
+```
+Git is a distributed version control system.
+Git is free software distributed under the GPL.
+Git has a mutable index called stage.
+Git tracks changes of files.
+<<<<<<< HEAD
+Creating a new branch is quick & simple.
+=======
+Creating a new branch is quick AND simple.
+>>>>>>> feature1
+```
+
+Git用`<<<<<<<`，`=======`，`>>>>>>>`标记出不同分支的内容
+
+这时候你就需要手动修改文件，之后再提交
+
+```
+$ git add readme.txt 
+$ git commit -m "conflict fixed"
+[master cf810e4] conflict fixed
+```
+
+现在，`master`分支和`feature1`分支变成了下图所示：
+
+```ascii
+                                     HEAD
+                                       │
+                                       │
+                                       ▼
+                                    master
+                                       │
+                                       │
+                                       ▼
+                            ┌───┐    ┌───┐
+                         ┌─▶│   │───▶│   │
+┌───┐    ┌───┐    ┌───┐  │  └───┘    └───┘
+│   │───▶│   │───▶│   │──┤             ▲
+└───┘    └───┘    └───┘  │  ┌───┐      │
+                         └─▶│   │──────┘
+                            └───┘
+                              ▲
+                              │
+                              │
+                          feature1
+```
+
+用带参数的`git log`也可以看到分支的合并情况：
+
+```
+$ git log --graph --pretty=oneline --abbrev-commit
+*   cf810e4 (HEAD -> master) conflict fixed
+|\  
+| * 14096d0 (feature1) AND simple
+* | 5dc6824 & simple
+|/  
+* b17d20e branch test
+* d46f35e (origin/master) remove test.txt
+* b84166e add test.txt
+* 519219b git tracks changes
+* e43a48b understand how stage works
+* 1094adb append GPL
+* e475afc add distributed
+* eaadf4e wrote a readme file
+```
+
+
+
+###### 分支管理策略
+
+​	通常，合并分支时，如果可能，Git会用`Fast forward`模式，但这种模式下，删除分支后，会丢掉分支信息。
+
+如果要强制禁用`Fast forward`模式，Git就会在merge时生成一个新的commit，这样，从分支历史上就可以看出分支信息。
+
+合并`dev`分支，请注意`--no-ff`参数，表示禁用`Fast forward`：
+
+```
+$ git merge --no-ff -m "merge with no-ff" dev
+Merge made by the 'recursive' strategy.
+ readme.txt | 1 +
+ 1 file changed, 1 insertion(+)
+```
+
+因为本次合并要创建一个新的commit，所以加上`-m`参数，把commit描述写进去。
+
+![git-no-ff-mode](https://www.liaoxuefeng.com/files/attachments/919023225142304/0)
+
+
+
+###### Bug分支
+
+​	你接到一个修复一个代号101的bug的任务时，很自然地，你想创建一个分支`issue-101`来修复它，但是，等等，当前正在`dev`上进行的工作还没有提交。工作只进行到一半，还没法提交，预计完成还需1天时间。但是，必须在两个小时内修复该bug，怎么办？
+
+Git还提供了一个`stash`功能，可以把当前工作现场“储藏”起来，等以后恢复现场后继续工作：
+
+```
+$ git stash
+Saved working directory and index state WIP on dev: f52c633 add merge
+```
+
+现在，用`git status`查看工作区，就是干净的（除非有没有被Git管理的文件），因此可以放心地创建分支来修复bug。
+
+太棒了，原计划两个小时的bug修复只花了5分钟！现在，是时候接着回到`dev`分支干活了！
+
+```
+$ git switch dev
+Switched to branch 'dev'
+
+$ git status
+On branch dev
+nothing to commit, working tree clean
+```
+
+工作区是干净的，刚才的工作现场存到哪去了？用`git stash list`命令看看：
+
+```
+$ git stash list
+stash@{0}: WIP on dev: f52c633 add merge
+```
+
+工作现场还在，Git把stash内容存在某个地方了，但是需要恢复一下，有两种方式恢复：
+
+> 一是用`git stash apply`恢复，但是恢复后，stash内容并不删除，你需要用`git stash drop`来删除；
+
+> 另一种方式是用`git stash pop`，恢复的同时把stash内容也删了：
+>
+> 再用`git stash list`查看，就看不到任何stash内容了：
+>
+> ```
+> $ git stash list
+> ```
+
+你可以多次stash，恢复的时候，先用`git stash list`查看，然后恢复指定的stash，用命令：
+
+```
+$ git stash apply stash@{0}
+```
+
+
+
+但是，dev分支就是在原本master分支过来的，那么会不会存在相同的bug？
+
+同样的bug，要在dev上修复，我们只需要把`4c805e2 fix bug 101`这个提交所做的修改“复制”到dev分支。注意：我们只想复制`4c805e2 fix bug 101`这个提交所做的修改，并不是把整个master分支merge过来。
+
+为了方便操作，Git专门提供了一个`cherry-pick`命令，让我们能复制一个特定的提交到当前分支：
+
+```
+$ git branch
+* dev
+  master
+$ git cherry-pick 4c805e2
+[master 1d4b803] fix bug 101
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+```
+
+
+
+###### 多人协作
+
+你的小伙伴向`origin/dev`分支推送了他的提交，而碰巧你也对同样的文件作了修改，并试图推送：
+
+```
+$ cat env.txt
+env
+
+$ git add env.txt
+
+$ git commit -m "add new env"
+[dev 7bd91f1] add new env
+ 1 file changed, 1 insertion(+)
+ create mode 100644 env.txt
+
+$ git push origin dev
+To github.com:michaelliao/learngit.git
+ ! [rejected]        dev -> dev (non-fast-forward)
+error: failed to push some refs to 'git@github.com:michaelliao/learngit.git'
+hint: Updates were rejected because the tip of your current branch is behind
+hint: its remote counterpart. Integrate the remote changes (e.g.
+hint: 'git pull ...') before pushing again.
+hint: See the 'Note about fast-forwards' in 'git push --help' for details.
+```
+
+推送失败，因为你的小伙伴的最新提交和你试图推送的提交有冲突，解决办法也很简单，Git已经提示我们，先用`git pull`把最新的提交从`origin/dev`抓下来，然后，在本地合并，解决冲突，再推送：
+
+```
+$ git pull
+There is no tracking information for the current branch.
+Please specify which branch you want to merge with.
+See git-pull(1) for details.
+
+    git pull <remote> <branch>
+
+If you wish to set tracking information for this branch you can do so with:
+
+    git branch --set-upstream-to=origin/<branch> dev
+```
+
+`git pull`也失败了，原因是没有指定本地`dev`分支与远程`origin/dev`分支的链接，根据提示，设置`dev`和`origin/dev`的链接：
+
+```
+$ git branch --set-upstream-to=origin/dev dev
+Branch 'dev' set up to track remote branch 'dev' from 'origin'.
+```
+
+再pull：
+
+```
+$ git pull
+Auto-merging env.txt
+CONFLICT (add/add): Merge conflict in env.txt
+Automatic merge failed; fix conflicts and then commit the result.
+```
+
+这回`git pull`成功，但是合并有冲突，需要手动解决，解决的方法和分支管理中的[解决冲突](http://www.liaoxuefeng.com/wiki/896043488029600/900004111093344)完全一样。解决后，提交，再push：
+
+```
+$ git commit -m "fix env conflict"
+[dev 57c53ab] fix env conflict
+
+$ git push origin dev
+Counting objects: 6, done.
+Delta compression using up to 4 threads.
+Compressing objects: 100% (4/4), done.
+Writing objects: 100% (6/6), 621 bytes | 621.00 KiB/s, done.
+Total 6 (delta 0), reused 0 (delta 0)
+To github.com:michaelliao/learngit.git
+   7a5e5dd..57c53ab  dev -> dev
 ```
