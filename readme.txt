@@ -1,7 +1,1 @@
-Git is a learngit control system.
-Git is free software.
-Git has a mutable index called stage.
-Git tracks changes.
-Creating a new branch is quick.
-Creating a new branch is quick and simple.
-我是聪明人
+这是我用来学习git以及其他知识的仓库
